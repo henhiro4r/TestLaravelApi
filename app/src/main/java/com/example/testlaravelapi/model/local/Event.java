@@ -3,14 +3,24 @@ package com.example.testlaravelapi.model.local;
 import com.google.gson.annotations.SerializedName;
 
 public class Event {
-    @SerializedName("")
+    @SerializedName("event_title")
     String title;
-    @SerializedName("")
+    @SerializedName("event_description")
     String description;
-    @SerializedName("")
+    @SerializedName("created_by")
     String created_by;
-    @SerializedName("")
+    @SerializedName("status")
     String status;
+
+    public Event() {
+    }
+
+    public Event(String title, String description, String created_by, String status) {
+        this.title = title;
+        this.description = description;
+        this.created_by = created_by;
+        this.status = status;
+    }
 
     public String getTitle() {
         return title;

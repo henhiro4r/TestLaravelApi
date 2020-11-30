@@ -8,4 +8,8 @@ import java.util.List;
 public class EventResponse {
     @SerializedName("data")
     private List<Event> results;
+
+    public List<Event> getResults() {
+        return results;
+    }
 }

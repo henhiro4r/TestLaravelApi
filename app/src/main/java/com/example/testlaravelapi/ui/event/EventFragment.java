@@ -1,26 +1,34 @@
 package com.example.testlaravelapi.ui.event;
 
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProviders;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProviders;
+import androidx.navigation.NavDirections;
+import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.testlaravelapi.R;
+import com.example.testlaravelapi.model.local.Event;
 import com.example.testlaravelapi.ui.MainActivity;
+import com.example.testlaravelapi.utils.SharedPreferenceHelper;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.util.List;
 import java.util.Objects;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 public class EventFragment extends Fragment {
 
@@ -30,8 +38,12 @@ public class EventFragment extends Fragment {
     @BindView(R.id.rv_event)
     RecyclerView rvEvent;
 
+    @BindView(R.id.fabLogout)
+    FloatingActionButton fabLogout;
+
     private EventViewModel viewModel;
     private EventAdapter adapter;
+    private SharedPreferenceHelper helper;
 
     public EventFragment() {
         // Required empty public constructor
@@ -51,9 +63,39 @@ public class EventFragment extends Fragment {
         Objects.requireNonNull(((MainActivity) requireActivity()).getSupportActionBar()).setDisplayHomeAsUpEnabled(false);
 
         //TODO: Place viewModel implementation here
+        helper = SharedPreferenceHelper.getInstance(requireActivity());
+        viewModel = ViewModelProviders.of(requireActivity()).get(EventViewModel.class);
+        viewModel.init(helper.getAccessToken());
+        viewModel.getEvents().observe(requireActivity(), observeViewModel);
 
         rvEvent.setLayoutManager(new LinearLayoutManager(getActivity()));
         adapter = new EventAdapter(getActivity());
+    }
+
+    private Observer<List<Event>> observeViewModel = new Observer<List<Event>>() {
+        @Override
+        public void onChanged(List<Event> events) {
+            if (events != null) {
+                adapter.setEventList(events);
+                adapter.notifyDataSetChanged();
+                rvEvent.setAdapter(adapter);
+                showLoading(false);
+            }
+        }
+    };
+
+    @OnClick(R.id.fabLogout)
+    public void logout(View view) {
+        if (view.getId() == R.id.fabLogout) {
+            viewModel.logout().observe(requireActivity(), message -> {
+                if (!message.isEmpty()) {
+                    helper.clearPref();
+                    NavDirections action = EventFragmentDirections.actionEventFragmentToLoginFragment();
+                    Navigation.findNavController(view).navigate(action);
+                    Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
     }
 
     private void showLoading(Boolean state) {
@@ -64,5 +106,11 @@ public class EventFragment extends Fragment {
             rvEvent.setVisibility(View.VISIBLE);
             loading.setVisibility(View.GONE);
         }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        getActivity().getViewModelStore().clear();
     }
 }

@@ -5,6 +5,8 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProviders;
 import androidx.navigation.NavDirections;
 import androidx.navigation.Navigation;
 
@@ -14,9 +16,12 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.testlaravelapi.R;
+import com.example.testlaravelapi.model.response.TokenResponse;
 import com.example.testlaravelapi.ui.MainActivity;
+import com.example.testlaravelapi.utils.SharedPreferenceHelper;
 
 import java.util.Objects;
 
@@ -35,6 +40,9 @@ public class LoginFragment extends Fragment {
     @BindView(R.id.tvReg)
     TextView tvRegister;
 
+    private LoginViewModel viewModel;
+    private SharedPreferenceHelper helper;
+
     public LoginFragment() {
 
     }
@@ -52,18 +60,30 @@ public class LoginFragment extends Fragment {
         Objects.requireNonNull(((MainActivity) requireActivity()).getSupportActionBar()).setDisplayHomeAsUpEnabled(false);
 
         //TODO: Place viewModel implementation here
+        viewModel = ViewModelProviders.of(requireActivity()).get(LoginViewModel.class);
+        helper = SharedPreferenceHelper.getInstance(requireActivity());
     }
+
 
     @OnClick({R.id.btnLogin, R.id.tvReg})
     public void onClick(View view) {
-        NavDirections actions;
         switch (view.getId()) {
             case R.id.btnLogin:
-                actions = LoginFragmentDirections.actionLoginFragmentToEventFragment();
-                Navigation.findNavController(view).navigate(actions);
+                if (!editEmail.getText().toString().isEmpty() && !editPassword.getText().toString().isEmpty()) {
+                    String email = editEmail.getText().toString().trim();
+                    String password = editPassword.getText().toString().trim();
+                    viewModel.login(email, password).observe(requireActivity(), tokenResponse -> {
+                        if (tokenResponse != null) {
+                            helper.saveAccessToken(tokenResponse.getAuthorization());
+                            NavDirections actions = LoginFragmentDirections.actionLoginFragmentToEventFragment();
+                            Navigation.findNavController(view).navigate(actions);
+                            Toast.makeText(getActivity(), "Success", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
                 break;
             case R.id.tvReg:
-                actions = LoginFragmentDirections.actionLoginFragmentToRegisterFragment();
+                NavDirections actions = LoginFragmentDirections.actionLoginFragmentToRegisterFragment();
                 Navigation.findNavController(view).navigate(actions);
                 break;
         }

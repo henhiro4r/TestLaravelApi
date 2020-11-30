@@ -16,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.example.testlaravelapi.R;
+import com.example.testlaravelapi.utils.SharedPreferenceHelper;
 
 public class SplashFragment extends Fragment {
 
@@ -33,8 +34,15 @@ public class SplashFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        SharedPreferenceHelper helper = SharedPreferenceHelper.getInstance(requireActivity());
+
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            NavDirections action = SplashFragmentDirections.actionSplashFragmentToLoginFragment();
+            NavDirections action;
+            if (helper.getAccessToken().isEmpty()) {
+                action = SplashFragmentDirections.actionSplashFragmentToLoginFragment();
+            } else {
+                action = SplashFragmentDirections.actionSplashFragmentToEventFragment();
+            }
             Navigation.findNavController(view).navigate(action);
         }, 2000);
     }
